@@ -7,6 +7,7 @@ import tempfile
 import threading
 import time
 import uuid
+import random
 
 app = Flask(__name__)
 CORS(app)
@@ -16,7 +17,6 @@ DOWNLOAD_DIR = tempfile.mkdtemp()
 
 # Clean up old files periodically
 def cleanup_old_files():
-    """Remove files older than 10 minutes"""
     while True:
         time.sleep(300)
         now = time.time()
@@ -33,11 +33,9 @@ cleanup_thread = threading.Thread(target=cleanup_old_files, daemon=True)
 cleanup_thread.start()
 
 def sanitize_filename(filename):
-    """Remove invalid characters from filename"""
     return re.sub(r'[<>:"/\\|?*]', '', filename)[:100]
 
 def format_size(bytes_size):
-    """Format bytes to human readable size"""
     if not bytes_size or bytes_size <= 0:
         return None
     if bytes_size >= 1024 * 1024 * 1024:
@@ -49,41 +47,60 @@ def format_size(bytes_size):
     return f"{bytes_size} B"
 
 def estimate_video_size(duration, height, tbr):
-    """Estimate video size based on duration and bitrate"""
     if not duration:
         return None
-    
     if tbr and tbr > 0:
         return int(tbr * 1000 / 8 * duration)
-    
     bitrate_map = {
         2160: 20000, 1440: 12000, 1080: 5000, 720: 2500,
         480: 1500, 360: 800, 240: 400, 144: 200,
     }
-    
     closest = min(bitrate_map.keys(), key=lambda x: abs(x - height))
-    bitrate = bitrate_map[closest]
-    return int(bitrate * 1000 / 8 * duration)
+    return int(bitrate_map[closest] * 1000 / 8 * duration)
+
+# User agents list for rotation
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+]
 
 def get_ydl_opts():
-    """Get yt-dlp options with anti-bot measures"""
+    """Get yt-dlp options with maximum anti-bot bypass"""
     return {
         'quiet': True,
         'no_warnings': True,
-        'extract_flat': False,
+        'ignoreerrors': True,
+        'no_check_certificate': True,
+        'prefer_insecure': True,
         'http_headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-us,en;q=0.5',
+            'User-Agent': random.choice(USER_AGENTS),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
             'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0',
         },
         'extractor_args': {
             'youtube': {
-                'player_client': ['android', 'web'],
-                'player_skip': ['webpage', 'configs'],
+                # Use multiple clients for fallback
+                'player_client': ['ios', 'android', 'web'],
+                'player_skip': ['webpage', 'configs', 'js'],
             }
         },
         'socket_timeout': 30,
+        'retries': 3,
+        'fragment_retries': 3,
+        'skip_unavailable_fragments': True,
+        'keepvideo': False,
+        'geo_bypass': True,
+        'geo_bypass_country': 'US',
     }
 
 @app.route('/')
@@ -104,11 +121,14 @@ def get_info():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             
+            if not info:
+                return jsonify({'error': 'Could not extract video info. YouTube may be blocking this request.'}), 500
+            
             duration = info.get('duration', 0)
             
             metadata = {
-                'title': info.get('title'),
-                'thumbnail': info.get('thumbnail'),
+                'title': info.get('title', 'Unknown'),
+                'thumbnail': info.get('thumbnail', ''),
                 'duration': info.get('duration_string', 'N/A'),
                 'duration_seconds': duration,
                 'video_id': info.get('id'),
@@ -173,14 +193,14 @@ def get_info():
 
     except Exception as e:
         error_msg = str(e)
+        print(f"Error: {error_msg}")  # Log for debugging
         if 'Sign in to confirm' in error_msg or 'bot' in error_msg.lower():
-            return jsonify({'error': 'YouTube is blocking this request. Try a different video or try again later.'}), 500
-        return jsonify({'error': error_msg}), 500
+            return jsonify({'error': 'YouTube is blocking requests from this server. This is a known limitation of server-based downloaders.'}), 500
+        return jsonify({'error': f'Error: {error_msg}'}), 500
 
 
 @app.route('/download', methods=['POST'])
 def download_file():
-    """Download video or audio"""
     data = request.get_json()
     url = data.get('url')
     format_id = data.get('format_id')
@@ -247,14 +267,14 @@ def download_file():
             
     except Exception as e:
         error_msg = str(e)
+        print(f"Download Error: {error_msg}")
         if 'Sign in to confirm' in error_msg or 'bot' in error_msg.lower():
-            return jsonify({'error': 'YouTube is blocking this request. Try again later.'}), 500
+            return jsonify({'error': 'YouTube blocked this download. Server-side downloading has limitations.'}), 500
         return jsonify({'error': error_msg}), 500
 
 
 @app.route('/serve-file/<filename>')
 def serve_file(filename):
-    """Serve the downloaded file"""
     filepath = os.path.join(DOWNLOAD_DIR, filename)
     
     if not os.path.exists(filepath):
