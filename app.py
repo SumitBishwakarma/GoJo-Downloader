@@ -53,27 +53,38 @@ def estimate_video_size(duration, height, tbr):
     if not duration:
         return None
     
-    # If we have tbr (total bitrate), use it
     if tbr and tbr > 0:
         return int(tbr * 1000 / 8 * duration)
     
-    # Otherwise estimate based on resolution
     bitrate_map = {
-        2160: 20000,  # 4K ~20 Mbps
-        1440: 12000,  # 1440p ~12 Mbps
-        1080: 5000,   # 1080p ~5 Mbps
-        720: 2500,    # 720p ~2.5 Mbps
-        480: 1500,    # 480p ~1.5 Mbps
-        360: 800,     # 360p ~800 kbps
-        240: 400,     # 240p ~400 kbps
-        144: 200,     # 144p ~200 kbps
+        2160: 20000, 1440: 12000, 1080: 5000, 720: 2500,
+        480: 1500, 360: 800, 240: 400, 144: 200,
     }
     
-    # Find closest resolution
     closest = min(bitrate_map.keys(), key=lambda x: abs(x - height))
     bitrate = bitrate_map[closest]
-    
     return int(bitrate * 1000 / 8 * duration)
+
+def get_ydl_opts():
+    """Get yt-dlp options with anti-bot measures"""
+    return {
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': False,
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us,en;q=0.5',
+            'Sec-Fetch-Mode': 'navigate',
+        },
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'web'],
+                'player_skip': ['webpage', 'configs'],
+            }
+        },
+        'socket_timeout': 30,
+    }
 
 @app.route('/')
 def home():
@@ -87,10 +98,7 @@ def get_info():
     if not url:
         return jsonify({'error': 'No URL provided'}), 400
 
-    ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-    }
+    ydl_opts = get_ydl_opts()
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -118,15 +126,12 @@ def get_info():
                 has_audio = f.get('acodec') and f.get('acodec') != 'none'
                 
                 if has_video and has_audio and height:
-                    # Get filesize - try multiple sources
                     filesize = f.get('filesize') or f.get('filesize_approx')
                     tbr = f.get('tbr', 0) or 0
                     
-                    # If no filesize, estimate it
                     if not filesize and duration > 0:
                         filesize = estimate_video_size(duration, height, tbr)
                     
-                    # Keep best format for each resolution
                     if height not in seen_res or tbr > (seen_res[height].get('tbr', 0) or 0):
                         seen_res[height] = {
                             'format_id': f.get('format_id'),
@@ -136,7 +141,6 @@ def get_info():
                             'tbr': tbr
                         }
             
-            # Add video formats sorted by resolution (highest first)
             for height in sorted(seen_res.keys(), reverse=True):
                 fmt_info = seen_res[height]
                 size_str = format_size(fmt_info['filesize']) or f"~{height}p"
@@ -150,9 +154,8 @@ def get_info():
                     'height': height
                 })
             
-            # Audio option - MP3
+            # Audio option
             if duration > 0:
-                # 192kbps MP3 size estimation
                 mp3_size = int((192 * 1000 / 8) * duration)
                 mp3_size_str = format_size(mp3_size)
             else:
@@ -169,12 +172,15 @@ def get_info():
             return jsonify(metadata)
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        error_msg = str(e)
+        if 'Sign in to confirm' in error_msg or 'bot' in error_msg.lower():
+            return jsonify({'error': 'YouTube is blocking this request. Try a different video or try again later.'}), 500
+        return jsonify({'error': error_msg}), 500
 
 
 @app.route('/download', methods=['POST'])
 def download_file():
-    """Download video or audio - fast original download"""
+    """Download video or audio"""
     data = request.get_json()
     url = data.get('url')
     format_id = data.get('format_id')
@@ -187,9 +193,11 @@ def download_file():
     unique_id = str(uuid.uuid4())[:8]
     
     try:
+        base_opts = get_ydl_opts()
+        
         if file_type == 'audio':
-            # Download and convert to MP3
             ydl_opts = {
+                **base_opts,
                 'format': 'bestaudio/best',
                 'outtmpl': os.path.join(DOWNLOAD_DIR, f"{unique_id}.%(ext)s"),
                 'postprocessors': [{
@@ -197,8 +205,6 @@ def download_file():
                     'preferredcodec': 'mp3',
                     'preferredquality': '192',
                 }],
-                'quiet': True,
-                'no_warnings': True,
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -214,18 +220,15 @@ def download_file():
             else:
                 return jsonify({'error': 'MP3 conversion failed'}), 500
         else:
-            # Download original video format - NO re-encoding for speed
             ydl_opts = {
+                **base_opts,
                 'format': format_id,
                 'outtmpl': os.path.join(DOWNLOAD_DIR, f"{unique_id}.%(ext)s"),
-                'quiet': True,
-                'no_warnings': True,
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download([url])
             
-            # Find downloaded file
             downloaded_file = None
             for f in os.listdir(DOWNLOAD_DIR):
                 if f.startswith(unique_id):
@@ -243,7 +246,10 @@ def download_file():
                 return jsonify({'error': 'Download failed'}), 500
             
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        error_msg = str(e)
+        if 'Sign in to confirm' in error_msg or 'bot' in error_msg.lower():
+            return jsonify({'error': 'YouTube is blocking this request. Try again later.'}), 500
+        return jsonify({'error': error_msg}), 500
 
 
 @app.route('/serve-file/<filename>')
