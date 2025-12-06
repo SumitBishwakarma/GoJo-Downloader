@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoJo - YouTube Video & Audio Downloader</title>
+    <meta name="description"
+        content="Download YouTube videos and audio for free. Fast, easy, and high-quality downloads in MP4, MP3, and more formats.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#00C853',
+                        primaryHover: '#00E676',
+                        secondary: '#00838F',
+                        accent: '#FF9800',
+                        bgLight: '#E0F7FA',
+                        bgMint: '#B2EBF2',
+                    },
+                    fontFamily: {
+                        sans: ['Roboto', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-hero {
+            background: linear-gradient(180deg, #4DD0E1 0%, #00BCD4 50%, #00838F 100%);
+        }
+
+        /* Floating Icons Animation */
+        .float-icon {
+            animation: floatIcon 6s ease-in-out infinite;
+        }
+
+        .float-icon-delay {
+            animation: floatIcon 6s ease-in-out infinite 2s;
+        }
+
+        @keyframes floatIcon {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(-15deg);
+            }
+
+            50% {
+                transform: translateY(-15px) rotate(-10deg);
+            }
+        }
+
+        /* Pulse animation for download button */
+        .pulse-glow {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 200, 83, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 15px rgba(0, 200, 83, 0);
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00C853;
+            border-radius: 4px;
+        }
+
+        /* FAQ Accordion */
+        .faq-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .faq-item.active .faq-content {
+            max-height: 200px;
+        }
+
+        .faq-item.active .faq-icon {
+            transform: rotate(45deg);
+        }
+
+        .faq-icon {
+            transition: transform 0.3s ease;
+        }
+
+        /* Step card hover effect */
+        .step-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .step-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Feature card gradient border */
+        .feature-card {
+            background: linear-gradient(135deg, #E0F7FA 0%, #B2EBF2 100%);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            border-color: #00C853;
+            transform: translateY(-5px);
+        }
+
+        /* Browser mockup dots */
+        .browser-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 font-sans">
+
+    <!-- Header - Pure Black -->
+    <header class="bg-black text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 h-16 flex items-center justify-between">
+            <a href="#" class="text-2xl font-black tracking-tight flex items-center gap-1">
+                <span class="text-yellow-400">Go</span><span class="text-white">Jo</span><span
+                    class="text-yellow-400">.com</span>
+            </a>
+
+            <!-- Desktop Navigation -->
+            <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
+                <a href="#" class="text-slate-300 hover:text-white transition-colors">Blog</a>
+                <a href="#" class="text-slate-300 hover:text-white transition-colors">Contact</a>
+            </nav>
+
+            <div class="flex items-center gap-3">
+                <button
+                    class="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg border border-gray-700 text-sm flex items-center gap-2 transition-colors">
+                    English <i class="fas fa-chevron-down text-xs"></i>
+                </button>
+                <button class="md:hidden text-xl p-2">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="gradient-hero pb-24 pt-16 relative overflow-hidden">
+        <!-- Decorative floating icons -->
+        <div class="absolute inset-0 pointer-events-none overflow-hidden">
+            <i class="fas fa-film absolute top-8 left-8 text-white/10 text-6xl float-icon"></i>
+            <i class="fas fa-video absolute top-20 left-[15%] text-white/10 text-4xl float-icon-delay"></i>
+            <i class="fas fa-play-circle absolute top-12 right-[20%] text-white/10 text-5xl float-icon"></i>
+            <i class="fas fa-file-video absolute top-16 right-8 text-white/10 text-6xl float-icon-delay"></i>
+            <span class="absolute top-8 right-12 text-white/10 font-black text-4xl float-icon">4K</span>
+            <span class="absolute bottom-20 left-12 text-white/10 font-black text-3xl float-icon-delay">MP3</span>
+        </div>
+
+        <div class="container mx-auto px-4 text-center relative z-10">
+            <!-- Logo Title -->
+            <h1 class="text-4xl md:text-6xl font-black mb-3 drop-shadow-lg">
+                <span class="text-yellow-400">Go</span><span class="text-white">Jo</span><span
+                    class="text-yellow-400">.com</span>
+            </h1>
+            <h2 class="text-2xl md:text-3xl font-bold text-white mb-2 drop-shadow-md">
+                YT Video Downloader
+            </h2>
+            <p class="text-white/90 text-lg mb-10 font-medium">Download YT Videos Online Free</p>
+
+            <!-- Search Input Box -->
+            <div class="bg-white p-2 rounded-xl shadow-2xl max-w-3xl mx-auto flex flex-col md:flex-row gap-2">
+                <div class="flex-grow relative flex items-center px-4">
+                    <i class="fas fa-globe text-slate-400 mr-3 text-lg"></i>
+                    <input type="text" id="urlInput"
+                        class="w-full py-3 text-slate-700 outline-none text-lg placeholder:text-slate-400"
+                        placeholder="Paste YT video link">
+                    <button id="clearBtn" class="hidden text-slate-400 hover:text-red-500 ml-2 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <button id="downloadBtn" onclick="fetchVideo()"
+                    class="bg-primary hover:bg-primaryHover text-white font-bold py-4 px-10 rounded-lg transition-all shadow-lg flex items-center justify-center gap-3 text-lg pulse-glow">
+                    <i class="fas fa-circle-down text-xl"></i>
+                    <span>Download</span>
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultSection"
+                class="hidden mt-10 max-w-3xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+                <div class="p-4 md:p-6 flex flex-col md:flex-row gap-6">
+                    <div class="md:w-1/3 relative group">
+                        <img id="resThumb" src="" alt="Thumbnail" class="w-full rounded-xl shadow-md">
+                        <span id="resDuration"
+                            class="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded font-bold"></span>
+                    </div>
+
+                    <div class="md:w-2/3 text-left">
+                        <h3 id="resTitle" class="text-xl font-bold text-slate-800 mb-4 line-clamp-2"></h3>
+
+                        <div class="overflow-y-auto max-h-60 border rounded-xl border-slate-200">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0">
+                                    <tr>
+                                        <th class="px-4 py-3">Quality</th>
+                                        <th class="px-4 py-3">Size</th>
+                                        <th class="px-4 py-3 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="formatsBody" class="divide-y divide-slate-100">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loader -->
+            <div id="loader" class="hidden mt-10 text-white">
+                <i class="fas fa-circle-notch fa-spin text-5xl"></i>
+                <p class="mt-3 font-medium text-lg">Analyzing URL...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Curved Transition -->
+    <div class="bg-bgLight h-16 rounded-t-[60px] -mt-12 relative z-20 w-full"></div>
+
+    <!-- How to Use Section -->
+    <section class="bg-bgLight py-16">
+        <div class="container mx-auto px-4 max-w-4xl">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-slate-800 mb-12">How to Use</h2>
+
+            <div class="space-y-8">
+                <!-- Step 1 -->
+                <div class="step-card bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="flex items-center gap-3">
+                            <span class="text-accent font-bold text-lg">Step 1</span>
+                            <span class="text-slate-800 font-bold text-lg">: Copy YT video link</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 mt-3 mb-5">Navigate to your desired video and copy the URL from the browser
+                        address bar.</p>
+
+                    <!-- Browser Mockup -->
+                    <div class="bg-slate-100 p-4 rounded-xl">
+                        <div class="flex gap-1.5 mb-3">
+                            <span class="browser-dot bg-red-400"></span>
+                            <span class="browser-dot bg-yellow-400"></span>
+                            <span class="browser-dot bg-green-400"></span>
+                        </div>
+                        <div
+                            class="bg-white rounded-lg border-2 border-primary px-4 py-3 flex items-center justify-between">
+                            <span class="text-slate-600 text-sm truncate">youtube.com/watch?v=dXlyMS61B68</span>
+                            <i class="fas fa-hand-pointer text-slate-500 text-xl ml-2 transform translate-y-1"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="step-card bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="flex items-center gap-3">
+                            <span class="text-accent font-bold text-lg">Step 2</span>
+                            <span class="text-slate-800 font-bold text-lg">: Paste to GoJo</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 mt-3 mb-5">Open GoJo and paste the YT link into our search input field.</p>
+
+                    <!-- Browser Mockup -->
+                    <div class="bg-slate-100 p-4 rounded-xl">
+                        <div class="flex gap-1.5 mb-3">
+                            <span class="browser-dot bg-red-400"></span>
+                            <span class="browser-dot bg-yellow-400"></span>
+                            <span class="browser-dot bg-green-400"></span>
+                        </div>
+                        <div
+                            class="bg-white rounded-lg border-2 border-primary px-4 py-3 flex items-center justify-between">
+                            <span class="text-slate-600 text-sm">gojo.com</span>
+                            <span
+                                class="bg-primary text-white p-2 rounded-full w-8 h-8 flex items-center justify-center">
+                                <i class="fas fa-arrow-right text-sm"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="step-card bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="flex items-center gap-3">
+                            <span class="text-accent font-bold text-lg">Step 3</span>
+                            <span class="text-slate-800 font-bold text-lg">: Hit Download</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 mt-3 mb-5">Click download to scan the video and reveal all available YT
+                        video download options.</p>
+
+                    <!-- Browser Mockup -->
+                    <div class="bg-slate-100 p-4 rounded-xl">
+                        <div class="flex gap-1.5 mb-3">
+                            <span class="browser-dot bg-red-400"></span>
+                            <span class="browser-dot bg-yellow-400"></span>
+                            <span class="browser-dot bg-green-400"></span>
+                        </div>
+                        <div class="text-center py-2">
+                            <span class="text-yellow-500 font-black text-2xl">Go</span><span
+                                class="text-slate-800 font-black text-2xl">Jo</span><span
+                                class="text-yellow-500 font-black text-2xl">.com</span>
+                        </div>
+                        <div
+                            class="bg-white rounded-lg border border-slate-200 px-4 py-3 flex items-center justify-between gap-2">
+                            <span class="text-slate-500 text-sm truncate">youtube.com/watch...</span>
+                            <i class="far fa-copy text-slate-400"></i>
+                            <span
+                                class="bg-primary text-white p-2 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-circle-down text-sm"></i>
+                            </span>
+                            <i class="fas fa-hand-pointer text-slate-500 text-xl transform translate-y-1"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="step-card bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="flex items-center gap-3">
+                            <span class="text-accent font-bold text-lg">Step 4</span>
+                            <span class="text-slate-800 font-bold text-lg">: Choose format & quality</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 mt-3 mb-5">Select your preferred format (MP4, MP3, etc.) and high-quality
+                        resolution for YT video download.</p>
+
+                    <!-- Format Selection Mockup -->
+                    <div class="bg-slate-100 p-4 rounded-xl">
+                        <div class="flex gap-1.5 mb-3">
+                            <span class="browser-dot bg-red-400"></span>
+                            <span class="browser-dot bg-yellow-400"></span>
+                            <span class="browser-dot bg-green-400"></span>
+                        </div>
+                        <div class="flex items-center gap-3 bg-white rounded-lg px-4 py-3">
+                            <span class="text-slate-700 font-medium">1080P</span>
+                            <span class="bg-yellow-400 text-black text-xs px-2 py-1 rounded font-bold">MP4</span>
+                            <span class="text-slate-500">12MB</span>
+                            <div class="ml-auto flex items-center gap-2">
+                                <button
+                                    class="bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                                <i class="fas fa-hand-pointer text-slate-500 text-xl transform translate-y-1"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5 -->
+                <div class="step-card bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="flex items-center gap-3">
+                            <span class="text-accent font-bold text-lg">Step 5</span>
+                            <span class="text-slate-800 font-bold text-lg">: Save instantly</span>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 mt-3 mb-5">Click the final download button and your file will start
+                        downloading to your device immediately.</p>
+
+                    <!-- Save Mockup -->
+                    <div class="bg-slate-100 p-4 rounded-xl">
+                        <div class="text-center py-2 mb-3">
+                            <span class="text-yellow-500 font-black text-2xl">Go</span><span
+                                class="text-slate-800 font-black text-2xl">Jo</span><span
+                                class="text-yellow-500 font-black text-2xl">.com</span>
+                        </div>
+                        <div class="flex items-center justify-center gap-4">
+                            <button
+                                class="bg-white border-2 border-primary text-primary px-6 py-3 rounded-lg font-bold flex items-center gap-2">
+                                <i class="fas fa-download"></i> Download
+                            </button>
+                            <i class="fas fa-angles-right text-yellow-500 text-2xl"></i>
+                            <div class="bg-primary text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2">
+                                <i class="far fa-folder-open"></i> Saved
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-16 bg-gradient-to-b from-bgMint to-bgLight">
+        <div class="container mx-auto px-4 max-w-5xl">
+            <h2 class="text-2xl md:text-3xl font-bold text-center text-slate-800 mb-4">What You Can Download with</h2>
+            <h3 class="text-2xl md:text-3xl font-bold text-center text-slate-800 mb-12">GoJo YT Downloader</h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Full Videos -->
+                <div class="feature-card rounded-2xl p-8 text-center">
+                    <div
+                        class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 text-primary text-3xl shadow-md">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <h4 class="font-bold text-xl mb-3 text-slate-800">Full Videos</h4>
+                    <p class="text-slate-600">Download YT videos in multiple resolutions: 144p up to 1080p, and even
+                        higher when available.</p>
+                </div>
+
+                <!-- Audio Only -->
+                <div class="feature-card rounded-2xl p-8 text-center">
+                    <div
+                        class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 text-primary text-3xl shadow-md">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <h4 class="font-bold text-xl mb-3 text-slate-800">Audio Only</h4>
+                    <p class="text-slate-600">Convert any YT video into high-quality MP3s - Ideal for music, podcasts,
+                        or sound clips.</p>
+                </div>
+
+                <!-- Shorts -->
+                <div class="feature-card rounded-2xl p-8 text-center">
+                    <div
+                        class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 text-primary text-3xl shadow-md">
+                        <i class="fas fa-rotate-right"></i>
+                    </div>
+                    <h4 class="font-bold text-xl mb-3 text-slate-800">Shorts</h4>
+                    <p class="text-slate-600">YT short video download with ease.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4 max-w-3xl">
+            <h2 class="text-3xl font-bold text-center text-slate-800 mb-12">FAQ</h2>
+
+            <div class="space-y-4">
+                <!-- FAQ Item 1 -->
+                <div class="faq-item border-b border-slate-200 pb-4">
+                    <button class="faq-toggle w-full flex justify-between items-center text-left py-2"
+                        onclick="toggleFaq(this)">
+                        <span class="font-semibold text-slate-800 text-lg">Is GoJo free to use?</span>
+                        <span
+                            class="faq-icon bg-primary text-white w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-plus text-sm"></i>
+                        </span>
+                    </button>
+                    <div class="faq-content">
+                        <p class="text-slate-600 pt-3 pb-2">Yes! GoJo is completely free to use. You can download
+                            unlimited videos and audio files without any charges or hidden fees.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 2 -->
+                <div class="faq-item border-b border-slate-200 pb-4">
+                    <button class="faq-toggle w-full flex justify-between items-center text-left py-2"
+                        onclick="toggleFaq(this)">
+                        <span class="font-semibold text-slate-800 text-lg">Can I extract audio only?</span>
+                        <span
+                            class="faq-icon bg-primary text-white w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-plus text-sm"></i>
+                        </span>
+                    </button>
+                    <div class="faq-content">
+                        <p class="text-slate-600 pt-3 pb-2">Absolutely! GoJo allows you to extract audio from any
+                            YouTube video and download it as a high-quality MP3 file.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 3 -->
+                <div class="faq-item border-b border-slate-200 pb-4">
+                    <button class="faq-toggle w-full flex justify-between items-center text-left py-2"
+                        onclick="toggleFaq(this)">
+                        <span class="font-semibold text-slate-800 text-lg">Is there a download limit?</span>
+                        <span
+                            class="faq-icon bg-primary text-white w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-plus text-sm"></i>
+                        </span>
+                    </button>
+                    <div class="faq-content">
+                        <p class="text-slate-600 pt-3 pb-2">No, there is no download limit. You can download as many
+                            videos as you want, whenever you want.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 4 -->
+                <div class="faq-item border-b border-slate-200 pb-4">
+                    <button class="faq-toggle w-full flex justify-between items-center text-left py-2"
+                        onclick="toggleFaq(this)">
+                        <span class="font-semibold text-slate-800 text-lg">Is it safe and private?</span>
+                        <span
+                            class="faq-icon bg-primary text-white w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-plus text-sm"></i>
+                        </span>
+                    </button>
+                    <div class="faq-content">
+                        <p class="text-slate-600 pt-3 pb-2">Yes, GoJo is completely safe and respects your privacy. We
+                            don't store any of your data or downloaded content.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ Item 5 -->
+                <div class="faq-item border-b border-slate-200 pb-4">
+                    <button class="faq-toggle w-full flex justify-between items-center text-left py-2"
+                        onclick="toggleFaq(this)">
+                        <span class="font-semibold text-slate-800 text-lg">Does it work on mobile and desktop?</span>
+                        <span
+                            class="faq-icon bg-primary text-white w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-plus text-sm"></i>
+                        </span>
+                    </button>
+                    <div class="faq-content">
+                        <p class="text-slate-600 pt-3 pb-2">Yes! GoJo works on all devices - desktop computers, tablets,
+                            and mobile phones. Just open it in your browser and start downloading.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer - Pure Black -->
+    <footer class="bg-black text-white pt-12 pb-6">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-3xl font-black mb-8">
+                <span class="text-yellow-400">Go</span>Jo<span class="text-yellow-400">.com</span>
+            </h2>
+
+            <div class="flex flex-col md:flex-row justify-center gap-6 text-sm text-slate-400 mb-8">
+                <a href="#" class="hover:text-white transition-colors">Download Video</a>
+                <a href="#" class="hover:text-white transition-colors">Policy</a>
+                <a href="#" class="hover:text-white transition-colors">Contact</a>
+            </div>
+
+            <div class="border-t border-gray-800 pt-6 text-sm text-slate-500">
+                All rights reserved © 2025 GoJo
+            </div>
+        </div>
+    </footer>
+
+    <!-- Floating Action Buttons -->
+    <div class="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
+        <button
+            class="bg-white text-green-500 w-14 h-14 rounded-xl shadow-lg flex items-center justify-center text-2xl hover:scale-110 transition-transform border border-slate-100">
+            <i class="fas fa-comment"></i>
+        </button>
+        <button
+            class="bg-white text-primary w-14 h-14 rounded-xl shadow-lg flex items-center justify-center text-2xl hover:scale-110 transition-transform border border-slate-100">
+            <i class="fas fa-share-nodes"></i>
+        </button>
+    </div>
+
+    <script>
+        // Store video data globally
+        let currentVideoData = null;
+
+        // FAQ Toggle
+        function toggleFaq(button) {
+            const faqItem = button.closest('.faq-item');
+            faqItem.classList.toggle('active');
+        }
+
+        // Fetch Video Function
+        async function fetchVideo() {
+            const url = document.getElementById('urlInput').value;
+            const loader = document.getElementById('loader');
+            const resultSection = document.getElementById('resultSection');
+            const btn = document.getElementById('downloadBtn');
+
+            if (!url) {
+                alert("Please paste a valid YouTube URL");
+                return;
+            }
+
+            // UI State: Loading
+            resultSection.classList.add('hidden');
+            loader.classList.remove('hidden');
+            btn.disabled = true;
+            btn.classList.add('opacity-75');
+
+            try {
+                const response = await fetch('/get-info', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else {
+                    currentVideoData = data;
+                    renderResults(data);
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("An error occurred while fetching video data.");
+            } finally {
+                // UI State: Reset
+                loader.classList.add('hidden');
+                btn.disabled = false;
+                btn.classList.remove('opacity-75');
+            }
+        }
+
+        // Download handler
+        async function startDownload(formatId, fileType, button) {
+            if (!currentVideoData) return;
+
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i> Processing...';
+            button.disabled = true;
+            button.classList.add('opacity-75');
+
+            try {
+                const response = await fetch('/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url: currentVideoData.original_url,
+                        format_id: formatId,
+                        type: fileType,
+                        title: currentVideoData.title
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    alert('Download Error: ' + data.error);
+                } else if (data.success) {
+                    // Trigger download
+                    const link = document.createElement('a');
+                    link.href = data.download_url + '?name=' + encodeURIComponent(data.filename);
+                    link.download = data.filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    button.innerHTML = '<i class="fas fa-check text-xs"></i> Done!';
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                        button.classList.remove('opacity-75');
+                    }, 2000);
+                    return;
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Download failed. Please try again.");
+            }
+
+            button.innerHTML = originalText;
+            button.disabled = false;
+            button.classList.remove('opacity-75');
+        }
+
+        function renderResults(data) {
+            // Populate Thumbnail & Title
+            document.getElementById('resThumb').src = data.thumbnail;
+            document.getElementById('resTitle').innerText = data.title;
+            document.getElementById('resDuration').innerText = data.duration;
+
+            // Populate Table
+            const tbody = document.getElementById('formatsBody');
+            tbody.innerHTML = '';
+
+            data.formats.forEach((fmt, index) => {
+                const row = document.createElement('tr');
+                row.className = "bg-white border-b hover:bg-slate-50 transition-colors";
+
+                row.innerHTML = `
+                    <td class="px-4 py-3 font-medium text-slate-900 flex items-center gap-2">
+                        ${fmt.type === 'video' ? '<i class="fas fa-video text-slate-400"></i>' : '<i class="fas fa-music text-slate-400"></i>'}
+                        <span class="bg-yellow-400 text-black text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">${fmt.ext}</span>
+                        ${fmt.label}
+                    </td>
+                    <td class="px-4 py-3 text-slate-500">${fmt.size}</td>
+                    <td class="px-4 py-3 text-right">
+                        <button onclick="startDownload('${fmt.format_id}', '${fmt.type}', this)" class="bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded-lg text-sm font-bold shadow transition-colors inline-flex items-center gap-2">
+                            <i class="fas fa-download text-xs"></i> Download
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            const resultSection = document.getElementById('resultSection');
+            resultSection.classList.remove('hidden');
+            resultSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Input clear button logic
+        const input = document.getElementById('urlInput');
+        const clearBtn = document.getElementById('clearBtn');
+        input.addEventListener('input', () => {
+            if (input.value.length > 0) clearBtn.classList.remove('hidden');
+            else clearBtn.classList.add('hidden');
+        });
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            clearBtn.classList.add('hidden');
+        });
+    </script>
+</body>
+
+</html>
